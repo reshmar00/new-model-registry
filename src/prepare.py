@@ -8,14 +8,16 @@ import sys
 
 def load_data(h5_filepath):
     with h5py.File(h5_filepath, 'r') as f:
-        group = f['data']['1']['meshes']
-        x = group['x'][:]
-        y = group['y'][:]
-        z = group['z'][:]
-        B = group['B'][:]
+        mesh_group = f['data']['1']['meshes']
 
+        # Access the datasets under the 'B' group
+        x = mesh_group['B']['x'][:]
+        y = mesh_group['B']['y'][:]
+        z = mesh_group['B']['z'][:]
+
+        # Use x, y, z to construct feature and target arrays
         X = np.stack([x.flatten(), y.flatten(), z.flatten()], axis=1)
-        y_data = B.reshape(-1, B.shape[-1])
+        y_data = np.stack([x, y, z], axis=-1).reshape(-1, 3)
 
     return X, y_data
 
@@ -47,3 +49,18 @@ if __name__ == "__main__":
 
     X, y = load_data(h5_filepath)
     split_and_save(X, y, test_size, random_state, out_dir)
+
+# import h5py
+
+# h5_filepath = "data/example-femm-3d.h5"
+
+# def explore_h5(filepath):
+#     def recursive_print(name, obj):
+#         print(name)
+
+#     with h5py.File(filepath, "r") as f:
+#         print("Top-level keys:", list(f.keys()))
+#         print("\nFull structure:")
+#         f.visititems(lambda name, obj: print(f"{name} ({type(obj)})"))
+
+# explore_h5(h5_filepath)
