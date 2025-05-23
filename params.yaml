@@ -1,0 +1,12 @@
+prepare:
+  test_size: 0.2
+  random_state: 42
+  h5_filepath: "data/example-femm-3d.h5"
+  out_dir: "data/prepared"
+
+train:
+  seed: 42
+  model_out: "model_outputs/"
+  train_data: "data/prepared/train.pkl"
+  test_data: "data/prepared/test.pkl"
+  n_estimators: 100

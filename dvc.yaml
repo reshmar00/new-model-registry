@@ -1,0 +1,21 @@
+stages:
+  prepare:
+    cmd: python src/prepare.py params.yaml
+    deps:
+      - data/example-femm-3d.h5
+      - src/prepare.py
+      - params.yaml
+    outs:
+      - data/prepared/train.pkl
+      - data/prepared/test.pkl
+
+  train:
+    cmd: python src/train.py params.yaml
+    deps:
+      - data/prepared/train.pkl
+      - data/prepared/test.pkl
+      - models/random_forest_model.py
+      - src/train.py
+      - params.yaml
+    outs:
+      - model_outputs
