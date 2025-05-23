@@ -1,0 +1,55 @@
+schema: '2.0'
+stages:
+  prepare:
+    cmd: python src/prepare.py params.yaml
+    deps:
+    - path: data/example-femm-3d.h5
+      hash: md5
+      md5: 170d6285b94fbfc25090f3ad9765f402
+      size: 3561320
+    - path: params.yaml
+      hash: md5
+      md5: aa7557868f0635a8009f0b5d94ed022d
+      size: 259
+    - path: src/prepare.py
+      hash: md5
+      md5: 94098546685493d8b519f3eb74073586
+      size: 2055
+    outs:
+    - path: data/prepared/test.pkl
+      hash: md5
+      md5: 876f04558a1718ee2ac136944bf44cc9
+      size: 996940
+    - path: data/prepared/train.pkl
+      hash: md5
+      md5: 42a1114be2a97fae947a709e7339925c
+      size: 3987008
+  train:
+    cmd: python src/train.py params.yaml
+    deps:
+    - path: data/prepared/test.pkl
+      hash: md5
+      md5: 876f04558a1718ee2ac136944bf44cc9
+      size: 996940
+    - path: data/prepared/train.pkl
+      hash: md5
+      md5: 42a1114be2a97fae947a709e7339925c
+      size: 3987008
+    - path: models/random_forest_model.py
+      hash: md5
+      md5: 3472f3ab36ea017ca6903fb2b2815ecc
+      size: 188
+    - path: params.yaml
+      hash: md5
+      md5: aa7557868f0635a8009f0b5d94ed022d
+      size: 259
+    - path: src/train.py
+      hash: md5
+      md5: 1a34693d0663890c54d48b93d4e1e1f5
+      size: 1671
+    outs:
+    - path: model_outputs
+      hash: md5
+      md5: d85f39aa9c9c0e8b7bed953b58d70cc9.dir
+      size: 923250800
+      nfiles: 1
