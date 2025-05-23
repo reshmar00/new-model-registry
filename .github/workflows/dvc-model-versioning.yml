@@ -1,0 +1,82 @@
+name: Versioned Model Tracker
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+    inputs:
+      model_name:
+        description: 'Enter model name (e.g. random_forest_generator)'
+        required: true
+
+jobs:
+  version-model:
+    runs-on: ubuntu-latest
+    env:
+      DATA_FILE: data/example-femm-3d.h5
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install dvc
+          pip install -r src/requirements.txt
+
+      - name: Determine Model Version
+        id: set_version
+        run: |
+          MODEL_NAME="${{ github.event.inputs.model_name }}"
+          MODEL_DIR="model_outputs"
+          EXISTING=$(ls "$MODEL_DIR"/${MODEL_NAME}_v*.pkl 2>/dev/null || echo "")
+
+          if [[ -z "$EXISTING" ]]; then
+            VERSION="v0.0"
+          else
+            LATEST_VERSION=$(echo "$EXISTING" | sed -E "s/.*_${MODEL_NAME}_v([0-9]+\.[0-9]+)\.pkl/\1/" | sort -V | tail -n 1)
+            MAJOR=$(echo $LATEST_VERSION | cut -d. -f1)
+            MINOR=$(echo $LATEST_VERSION | cut -d. -f2)
+            NEW_MINOR=$(echo "$MINOR + 1" | bc)
+            VERSION="v${MAJOR}.${NEW_MINOR}"
+          fi
+
+          OUTPUT_MODEL="${MODEL_NAME}_${VERSION}.pkl"
+
+          echo "MODEL_NAME=$MODEL_NAME" >> $GITHUB_ENV
+          echo "OUTPUT_MODEL=$OUTPUT_MODEL" >> $GITHUB_ENV
+          echo "Using $OUTPUT_MODEL"
+
+      - name: Train Model
+        run: |
+          set -e
+          mkdir -p model_outputs
+          echo "🚀 Running DVC pipeline automation..."
+          python3 run_pipeline.py --model models/$MODEL_NAME.py --data $DATA_FILE
+          echo "✅ DVC pipeline execution completed!"
+
+      - name: Track model with DVC
+        run: |
+          dvc commit
+          git add dvc.lock
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          if ! git diff --cached --quiet; then
+            git commit -m "Track ${{ env.OUTPUT_MODEL }} with DVC"
+            git push origin main
+          fi
+          dvc push
+
+
+      - name: Upload model artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: "${{ env.OUTPUT_MODEL }}"
+          path: model_outputs/${{ env.OUTPUT_MODEL }}
